@@ -1,0 +1,4 @@
+node_modules
+cards/**
+package-lock.json
+.idea

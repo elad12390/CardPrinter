@@ -24,7 +24,9 @@ app.get('/', (req, res) => {
                     grid-template-columns: var(--card-width) var(--card-width) var(--card-width);
                     grid-template-rows: var(--card-height) var(--card-height) var(--card-height);
                     grid-auto-flow: row;
-                    padding: 40mm;
+                    align-items: center;
+                    justify-content: center;
+                    align-content: center;
                     position: relative;
                     margin: 0;
                     width: var(--a4-width);
