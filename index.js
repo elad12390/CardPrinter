@@ -1,15 +1,45 @@
 
-const express = require('express')
-const app = express()
+import fs from 'fs';
+import chokidar from 'chokidar';
+import express from 'express';
+import http from 'http';
+import {Server} from 'socket.io';
+import {BehaviorSubject, delay, Observable} from 'rxjs';
+
+const log = console.log.bind(console);
 const port = 3000
+const app = express()
+const server = http.createServer(app);
+const io = new Server(server);
+
+const cardsFolder = './cards/';
+
 app.use('/cards', express.static('cards'))
+
+const cards = (files) => `
+${files.map(file => `
+    <div class="card">
+        <img src="./cards/${file}"/>
+    </div>
+`).join('')}
+`
+
+let bodySubject = new BehaviorSubject('');
+
+
+
+fs.readdir(cardsFolder, (err, files) => {
+    bodySubject.next(cards(files))
+})
+
+fs.watch(cardsFolder, () => {
+    fs.readdir(cardsFolder, (err, files) => {
+        bodySubject.next(cards(files))
+    })
+})
+
 app.get('/', (req, res) => {
-    const testFolder = './cards/';
-    const fs = require('fs');
-
-    fs.readdir(testFolder, (err, files) => {
-
-        res.send(`
+    res.send(`
         <html>
         <head>
             <style>
@@ -46,25 +76,29 @@ app.get('/', (req, res) => {
                     height: var(--card-height);
                     object-fit: cover;
                 }
-
             </style>
+            <script src="https://cdn.socket.io/4.4.0/socket.io.min.js" integrity="sha384-1fOn6VtTq3PWwfsOrk45LnYcGosJwzMHv+Xh/Jx5303FVOXzEnw0EpLv30mtjmlj" crossorigin="anonymous"></script>
+            <script>
+                const socket = io();
+                socket.on('body', ((body) => {
+                    document.querySelector('.container').innerHTML = body;
+                }).bind(this))
+            </script>
         </head>
-        <body class="container">
-        ${files.map(file => `
-            <div class="card">
-                <img src="./cards/${file}"/>
-            </div>
-        `).join('')}
-        </body>
+            <body class="container"></body>
         </html>
-        
-        
-        `)
-    });
-
+    `);
 })
 
-app.listen(port, () => {
-    console.log(`Example app listening at http://localhost:${port}`)
+io.on('connection', (socket) => {
+    console.log('connection established')
+    const subscription = bodySubject
+        .pipe(
+            delay(200)
+        ).subscribe(cards => socket.emit('body', cards))
+    socket.on('disconnect', () => subscription.unsubscribe())
+})
 
+server.listen(port, () => {
+    console.log(`Example app listening at http://localhost:${port}`)
 })
