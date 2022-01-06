@@ -1,0 +1,83 @@
+<html>
+<head>
+    <style>
+        :root {
+            --a4-height: 29.7cm;
+            --a4-width: 21cm;
+            --card-height: 88mm;
+            --card-width: 63mm;
+        }
+        .container {
+            display: grid;
+            grid-template-columns: var(--card-width) var(--card-width) var(--card-width);
+            grid-template-rows: var(--card-height) var(--card-height) var(--card-height);
+            grid-auto-flow: row;
+            align-items: center;
+            justify-content: center;
+            align-content: center;
+            position: relative;
+            margin: 0;
+            width: var(--a4-width);
+            height: var(--a4-height);
+        }
+        .card {
+            position:relative;
+            background: white;
+        }
+        .card img {
+            z-index: 20000;
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            width: var(--card-width);
+            height: var(--card-height);
+            object-fit: cover;
+        }
+
+        #cutLine {
+            position: absolute;
+        }
+
+        #cutLine.horizontal {
+            width: var(--a4-width);
+            height: 1px;
+            background-image: linear-gradient(to right, black 33%, rgba(255,255,255,0) 0%);
+            background-position: bottom;
+            background-size: 3px 1px;
+            background-repeat: repeat-x;
+        }
+
+        #cutLine.vertical {
+            height: var(--a4-height);
+            width: 1px;
+            background-image: linear-gradient(black 33%, rgba(255,255,255,0) 0%);
+            background-position: right;
+            background-size: 1px 3px;
+            background-repeat: repeat-y;
+        }
+    </style>
+    <script src="https://cdn.socket.io/4.4.0/socket.io.min.js" integrity="sha384-1fOn6VtTq3PWwfsOrk45LnYcGosJwzMHv+Xh/Jx5303FVOXzEnw0EpLv30mtjmlj" crossorigin="anonymous"></script>
+    <script>
+        const firstCutY = 16.1;
+        const firstCutX = 10.2;
+        const a4Height = 29.7; // cm
+        const a4Width = 21; // cm
+        const cardHeight = 88 + .2; // mm
+        const cardWidth = 63; // mm
+
+        const cutLine = (x, y, dir) => `<div id="cutLine" class="${dir}" style="left: ${x !== null ? `${firstCutX + cardWidth * x}mm` : 0}; top: ${y !== null ? `${firstCutY + cardHeight * y}mm` : 0}"></div>`
+        const cutLines = () => [
+            cutLine(null,1, 'horizontal'),
+            cutLine(null,2, 'horizontal'),
+            cutLine(1,null, 'vertical'),
+            cutLine(2,null, 'vertical'),
+        ].join('')
+        const socket = io();
+        socket.on('body', ((body) => {
+            document.querySelector('.container').innerHTML = body + cutLines();
+        }).bind(this))
+    </script>
+</head>
+<body class="container"></body>
+</html>
